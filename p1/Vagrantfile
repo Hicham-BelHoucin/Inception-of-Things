@@ -1,42 +1,25 @@
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
 
-Vagrant.configure("2") do |config|
-  config.vm.define "hbel_houS" do |hbel_houS|
-    hbel_houS.vm.box = "ubuntu/focal64"
-    hbel_houS.vm.network :private_network, ip: "192.168.56.110"
-    hbel_houS.vm.hostname = "hbel-houS"
-    hbel_houS.vm.synced_folder "./shared", "/vagrant_shared"
-    hbel_houS.vm.provision "shell", inline: <<-SHELL
-      sudo apt-get update
-      export IPV4=192.168.56.110
-      curl -sfL https://get.k3s.io | \
-      INSTALL_K3S_EXEC="--disable servicelb --flannel-backend=wireguard-native \ 
-      --disable traefik --node-ip $IPV4 --cluster-cidr 10.42.0.0/16 --service-cidr 10.43.0.0/16" sh -
-      sudo chmod 644 /etc/rancher/k3s/k3s.yaml
-      chmod 777 /var/lib/rancher/k3s/server/node-token
-      cp /var/lib/rancher/k3s/server/node-token /vagrant_shared/
-    SHELL
-    hbel_houS.vm.provider "virtualbox" do |vb|
-      vb.memory = "1024"
-      vb.cpus = "1"
-    end
-  end
+servers = [
+  { :name => "sel-marsS", :primary => true, :ip => "192.168.56.110", :memory => "1024", :cpus => 1 },
+  { :name => "sel-marsSW", :primary => false, :ip => "192.168.56.111", :memory => "1024", :cpus => 1 }
+]
 
-  config.vm.define "hbel_houSW" do |hbel_houSW|
-    hbel_houSW.vm.box = "ubuntu/focal64"
-    hbel_houSW.vm.network :private_network, ip: "192.168.56.111"
-    hbel_houSW.vm.hostname = "hbel-houSW"
-    hbel_houSW.vm.provision "shell", inline: <<-SHELL
-      sudo apt-get update
-      export SERVERIP=https://192.168.56.110:6443
-      export NODE_TOKEN=$(cat /vagrant/shared/node-token)
-      curl -sfL https://get.k3s.io | K3S_URL=$SERVERIP K3S_TOKEN=$NODE_TOKEN sh -
-    SHELL
-    hbel_houSW.vm.provider "virtualbox" do |vb|
-      vb.memory = "1024"
-      vb.cpus = "1"
+Vagrant.configure("2") do |config|
+  config.vm.box = "ubuntu/focal64"
+  config.vm.synced_folder "./shared", "/vagrant", create: true
+
+  servers.each do |conf|
+    config.vm.define conf[:name], primary: conf[:primary] do |node|
+      node.vm.hostname = conf[:name]
+      node.vm.network "private_network", ip: conf[:ip]
+      node.vm.provider "virtualbox" do |vb|
+        vb.name = conf[:name]
+        vb.memory = conf[:memory]
+        vb.cpus = conf[:cpus]
+      end
+      node.vm.provision "shell", path: "provision/#{conf[:name]}.sh"
     end
   end
 end
-
