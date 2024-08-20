@@ -6,7 +6,17 @@ Vagrant.configure("2") do |config|
     hbel_houS.vm.box = "ubuntu/focal64"
     hbel_houS.vm.network :private_network, ip: "192.168.56.110"
     hbel_houS.vm.hostname = "hbel-houS"
-    hbel_houS.vm.provision "file", source: "~/.ssh/id_rsa.pub", destination: "/home/vagrant/.ssh/authorized_keys"
+    hbel_houS.vm.synced_folder "./shared", "/vagrant_shared"
+    hbel_houS.vm.provision "shell", inline: <<-SHELL
+      sudo apt-get update
+      export IPV4=192.168.56.110
+      curl -sfL https://get.k3s.io | \
+      INSTALL_K3S_EXEC="--disable servicelb --flannel-backend=wireguard-native \ 
+      --disable traefik --node-ip $IPV4 --cluster-cidr 10.42.0.0/16 --service-cidr 10.43.0.0/16" sh -
+      sudo chmod 644 /etc/rancher/k3s/k3s.yaml
+      chmod 777 /var/lib/rancher/k3s/server/node-token
+      cp /var/lib/rancher/k3s/server/node-token /vagrant_shared/
+    SHELL
     hbel_houS.vm.provider "virtualbox" do |vb|
       vb.memory = "1024"
       vb.cpus = "1"
@@ -17,10 +27,16 @@ Vagrant.configure("2") do |config|
     hbel_houSW.vm.box = "ubuntu/focal64"
     hbel_houSW.vm.network :private_network, ip: "192.168.56.111"
     hbel_houSW.vm.hostname = "hbel-houSW"
-    hbel_houSW.vm.provision "file", source: "~/.ssh/id_rsa.pub", destination: "/home/vagrant/.ssh/authorized_keys"
+    hbel_houSW.vm.provision "shell", inline: <<-SHELL
+      sudo apt-get update
+      export SERVERIP=https://192.168.56.110:6443
+      export NODE_TOKEN=$(cat /vagrant/shared/node-token)
+      curl -sfL https://get.k3s.io | K3S_URL=$SERVERIP K3S_TOKEN=$NODE_TOKEN sh -
+    SHELL
     hbel_houSW.vm.provider "virtualbox" do |vb|
       vb.memory = "1024"
       vb.cpus = "1"
     end
   end
 end
+
