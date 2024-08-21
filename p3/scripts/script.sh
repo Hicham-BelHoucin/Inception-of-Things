@@ -3,34 +3,13 @@
 # Enable verbose mode
 set -x
 
-echo "Starting k3s installation..."
-curl -sfL https://get.k3s.io | sh -
+# install k3d using curl
+echo "Installing k3d..."
+curl -s https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | bash
 if [ $? -eq 0 ]; then
-  echo "k3s installation successful."
+  echo "k3d installed successfully."
 else
-  echo "k3s installation failed." >&2
-  exit 1
-fi
-
-echo "Setting permissions for k3s.yaml..."
-sudo chmod 644 /etc/rancher/k3s/k3s.yaml
-if [ $? -eq 0 ]; then
-  echo "Permissions set successfully."
-else
-  echo "Failed to set permissions for k3s.yaml." >&2
-  exit 1
-fi
-
-echo "Installing dependencies..."
-sudo apt-get install \
-  apt-transport-https \
-  ca-certificates \
-  curl \
-  software-properties-common -y
-if [ $? -eq 0 ]; then
-  echo "Dependencies installed successfully."
-else
-  echo "Failed to install dependencies." >&2
+  echo "Failed to install k3d." >&2
   exit 1
 fi
 
@@ -90,19 +69,57 @@ else
   exit 1
 fi
 
-echo "Applying Kubernetes configurations..."
-kubectl apply -f /vagrant/confs/app-1/service.yml
-kubectl apply -f /vagrant/confs/app-2/service.yml
-kubectl apply -f /vagrant/confs/app-3/service.yml
-kubectl apply -f /vagrant/confs/app-1/deployment.yml
-kubectl apply -f /vagrant/confs/app-2/deployment.yml
-kubectl apply -f /vagrant/confs/app-3/deployment.yml
-kubectl apply -f /vagrant/confs/app-ingress.yml
-
+# install kubectl using snap
+echo "Installing kubectl..."
+sudo snap install kubectl --classic
 if [ $? -eq 0 ]; then
-  echo "Kubernetes configurations applied successfully."
+  echo "kubectl installed successfully."
 else
-  echo "Failed to apply Kubernetes configurations." >&2
+  echo "Failed to install kubectl." >&2
+  exit 1
+fi
+
+echo "Checking kubectl version..."
+kubectl version --client
+
+# create new cluster using k3d
+echo "Creating new k3d cluster..."
+k3d cluster create mycluster
+if [ $? -eq 0 ]; then
+  echo "k3d cluster created successfully."
+else
+  echo "Failed to create k3d cluster." >&2
+  exit 1
+fi
+
+# createtwo name spaces one dev and one argocd
+echo "Creating two namespaces..."
+sudo kubectl create namespace dev
+sudo kubectl create namespace argocd
+if [ $? -eq 0 ]; then
+  echo "Namespaces created successfully."
+else
+  echo "Failed to create namespaces." >&2
+  exit 1
+fi
+
+# install argocd using kubectl
+echo "Installing ArgoCD..."
+sudo kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+if [ $? -eq 0 ]; then
+  echo "ArgoCD installed successfully."
+else
+  echo "Failed to install ArgoCD." >&2
+  exit 1
+fi
+
+#apply the argocd server and ui service
+echo "Applying ArgoCD server and UI service..."
+sudo kubectl apply -f /vagrant/confs/application.yml
+if [ $? -eq 0 ]; then
+  echo "ArgoCD server and UI service applied successfully."
+else
+  echo "Failed to apply ArgoCD server and UI service." >&2
   exit 1
 fi
 

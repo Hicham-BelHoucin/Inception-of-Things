@@ -1,21 +1,21 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: app1-deployment
+  name: app2-deployment
   labels:
-    app: app1
+    app: app2
 spec:
-  replicas: 1
+  replicas: 3
   selector:
     matchLabels:
-      app: app1
+      app: app2
   template:
     metadata:
       labels:
-        app: app1
+        app: app2
     spec:
       containers:
-        - name: app1
-          image: oubakrimo70300/my-app:latest
+        - name: app2
+          image: oubakrimo70300/my-app:0.2
           ports:
             - containerPort: 80

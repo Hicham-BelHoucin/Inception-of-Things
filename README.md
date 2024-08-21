@@ -143,11 +143,178 @@ This part involves setting up a single VM with K3s in server mode and deploying 
    - Ensure that each application is accessible via a different hostname (using services and ingress).
    - Configure one of the applications to run multiple replicas.
 
+Here's a README file that explains each line of the provided Kubernetes Ingress YAML configuration:
+
+# File Content
+
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: app-ingress
+spec:
+  rules:
+    - host: app1.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: app1-service
+                port:
+                  number: 80
+    - host: app2.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: app2-service
+                port:
+                  number: 80
+    # Default backend for unspecified hosts
+    - http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: app3-service
+                port:
+                  number: 80
+```
+
+## Explanation
+
+##### `apiVersion: networking.k8s.io/v1`
+
+This specifies the version of the Kubernetes API that you are using. The `networking.k8s.io/v1` API version is for networking-related resources like Ingress.
+
+##### `kind: Ingress`
+
+This defines the type of Kubernetes object. In this case, it is an `Ingress`, which manages external access to services within a Kubernetes cluster, typically via HTTP.
+
+##### `metadata:`
+
+The `metadata` section contains data that helps uniquely identify the object within the Kubernetes cluster.
+
+##### `name: app-ingress`
+
+The `name` field assigns a unique name to this Ingress resource. In this case, it's called `app-ingress`.
+
+##### `spec:`
+
+The `spec` section describes the desired state of the Ingress resource, including the rules for how traffic should be routed to the services within the cluster.
+
+##### `rules:`
+
+The `rules` section defines how incoming requests are routed to different services within the cluster based on the hostname and path.
+
+##### `- host: app1.com`
+
+This rule applies to HTTP requests with the hostname `app1.com`.
+
+##### `http:`
+
+This specifies that the rule applies to HTTP traffic.
+
+##### `paths:`
+
+Defines the URL paths that should be matched by this rule.
+
+##### `- path: /`
+
+This rule matches any path that starts with `/`. The `/` path is the root path, meaning it will match all incoming requests for the specified host.
+
+##### `pathType: Prefix`
+
+The `pathType` specifies how the path is matched. `Prefix` means that the URL path must start with the specified value (in this case, `/`).
+
+##### `backend:`
+
+The `backend` section defines the service within the Kubernetes cluster to which the traffic should be forwarded.
+
+##### `service:`
+
+This specifies the Kubernetes service that will handle the traffic.
+
+##### `name: app1-service`
+
+The `name` field specifies the name of the service that the traffic should be routed to. In this case, traffic for `app1.com` will be routed to `app1-service`.
+
+##### `port:`
+
+Specifies the port on which the service is listening.
+
+##### `number: 80`
+
+This defines the port number on which the service is exposed. The traffic for `app1.com` will be forwarded to port `80` on `app1-service`.
+
+##### `- host: app2.com`
+
+This rule applies to HTTP requests with the hostname `app2.com` and follows the same structure as the rule for `app1.com`, routing traffic to `app2-service` on port `80`.
+
+##### `# Default backend for unspecified hosts`
+
+This comment indicates that the next rule is a fallback or default rule that will handle any requests that don't match the specified hosts (`app1.com` or `app2.com`).
+
+##### `- http:`
+
+Specifies that the rule applies to HTTP traffic.
+
+##### `paths:`
+
+Defines the URL paths that should be matched by this rule.
+
+##### `- path: /`
+
+Matches any path that starts with `/`.
+
+##### `pathType: Prefix`
+
+Indicates that the URL path must start with the specified value (in this case, `/`).
+
+##### `backend:`
+
+Defines the service within the Kubernetes cluster to which the traffic should be forwarded.
+
+##### `service:`
+
+Specifies the Kubernetes service that will handle the traffic.
+
+##### `name: app3-service`
+
+Traffic that doesn't match the `app1.com` or `app2.com` hosts will be routed to `app3-service`.
+
+##### `port:`
+
+Specifies the port on which the service is listening.
+
+##### `number: 80`
+
+Defines the port number on which the service is exposed. The traffic will be forwarded to port `80` on `app3-service`.
+
 ### Part 3: K3d and Argo CD
 
 #### Overview
 
 In this part, you'll install K3d (a lightweight Kubernetes distribution for Docker) on a VM, set up Argo CD, and configure continuous integration to deploy an application from a GitHub repository.
+
+## k3s vs k3d: What is the difference?
+
+Both k3s and k3d are lightweight tools that allow you to deploy and run Kubernetes on your local machine with less operational effort compared to deploying k8s.
+
+k3d is a wrapper of k3s but one of the apparent differences is that k3s deploys a virtual machine-based Kubernetes cluster while k3d deploys Docker-based k3s Kubernetes clusters.
+
+Also, k3s does not provide prompt support for multiple clusters. To create multiple k3s clusters, you need to manually configure additional virtual machines or nodes. k3d on the other is specifically created to set up highly available, multiple k3s clusters without demanding more resources.
+
+By leveraging Docker containers, k3d offers a more scalable version of k3s which might make it preferable to the standard k3s.
+
+Another difference is in their use cases. Even though it is lightweight, k3s is designed to be easily deployable in production environments which makes it one of the most favorite options for simulating Kubernetes for production-level workloads in local environments. k3d, however, is more suitable for use in even smaller environments like Raspberry Pi, IoT, and Edge devices.
+
+k3d appears to be a more flexible and improved version of k3s even though their features and usage are similar. Choosing one of the two will depend on your preferences, considering the facts we've provided so far.
 
 #### Steps
 

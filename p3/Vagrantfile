@@ -1,0 +1,23 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+Vagrant.configure("2") do |config|
+  config.vm.define "hbel_houS" do |hbel_houS|
+    hbel_houS.vm.box = "ubuntu/focal64"
+    hbel_houS.vm.hostname = "hbel-houS"
+    
+    # Forwarding ports to higher ports on the host
+    hbel_houS.vm.network "forwarded_port", guest: 8080, host: 8080
+    hbel_houS.vm.network "forwarded_port", guest: 80, host: 8081
+    hbel_houS.vm.network "forwarded_port", guest: 443, host: 8443
+    
+    
+    hbel_houS.vm.provider "virtualbox" do |vb|
+      vb.memory = "2048"
+      vb.cpus = "2"
+    end
+    
+    # Uncomment the following line if you want to use a shell script for provisioning
+    hbel_houS.vm.provision "shell", path: "./scripts/script.sh"
+  end
+end
