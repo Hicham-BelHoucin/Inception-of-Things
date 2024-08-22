@@ -1,19 +1,16 @@
 #cloud-config
+runcmd:
+  - [eval, 'echo $(cat /proc/cmdline) "autoinstall" > /root/cmdline']
+  - [eval, "mount -n --bind -o ro /root/cmdline /proc/cmdline"]
+  - [eval, "snap restart subiquity.subiquity-service"]
+
 autoinstall:
   version: 1
   ssh:
     install-server: true
     allow-pw: true
-  user-data:
-    users:
-      - name: souf
-        gecos: Soufiane
-        sudo: ALL=(ALL) NOPASSWD:ALL
-        shell: /bin/bash
-        groups: users, admin
-        lock-passwd: false
-        passwd: "ec3759e2c570d302e65ea20a7d985e3bc131024889ad902a046c385afcd71beec61a4f2a5e4ce56863f54840b7315d692cfaeda8239481e37b00cade86139abd"
+  identity:
+    hostname: ubuntu
+    username: ubuntu
+    password: "$6$wdAcoXrU039hKYPd$508Qvbe7ObUnxoj15DRCkzC3qO7edjH0VV7BPNRDYK4QR8ofJaEEF2heacn0QgD.f8pO8SNp83XNdWG6tocBM1"
   shutdown: poweroff
-  late-commands:
-    - echo "Finished installing"
-    - sleep 10

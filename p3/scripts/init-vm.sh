@@ -1,9 +1,9 @@
 #!/bin/bash
 
 # Variables
-# UBUNTU_VERSION="20.04"
-ISO_PATH="/Users/sel-mars/goinfre/ubuntu-20.04.6-live-server-amd64.iso"
-VM_NAME="Inception-Of-Things-P3"
+UBUNTU_VERSION="20.04.6"
+ISO_PATH="/Users/sel-mars/goinfre/ubuntu-${UBUNTU_VERSION}-live-server-amd64.iso"
+VM_NAME="Inception-Of-Things"
 SHARED_FOLDER="/Users/sel-mars/goinfre/VirtualBox/${VM_NAME}/shared"
 VDI_PATH="/Users/sel-mars/goinfre/VirtualBox/${VM_NAME}/${VM_NAME}.vdi"
 VDI_SIZE=10240
@@ -11,86 +11,82 @@ MEMORY_SIZE=4096
 CPU_COUNT=2
 VRAM_SIZE=16
 
+USERNAME="ubuntu"
+PASSWORD="ubuntu"
+
+# Download Ubuntu ISO if it doesn't exist
+if [ ! -f "${ISO_PATH}" ]; then
+    echo "Downloading Ubuntu ISO..."
+    curl -o "${ISO_PATH}" "https://releases.ubuntu.com/${UBUNTU_VERSION}/ubuntu-${UBUNTU_VERSION}-live-server-amd64.iso"
+fi
+
 # Check if VM already exists
 if VBoxManage list vms | grep -q "\"${VM_NAME}\""; then
     echo "VM already exists"
     exit 1
 fi
 
-# Create VM
+# Setup VBox network if it doesn't exist
+if ! VBoxManage list hostonlyifs | grep -q "Name: vboxnet0"; then
+    VBoxManage hostonlyif create
+fi
+VBoxManage hostonlyif ipconfig vboxnet0 --ip 192.168.56.1
+
+# Create VM and configure settings
 VBoxManage createvm --name "${VM_NAME}" --ostype "Ubuntu_64" --register
-VBoxManage modifyvm "${VM_NAME}" --memory ${MEMORY_SIZE} --cpus ${CPU_COUNT} --vram ${VRAM_SIZE}
+VBoxManage modifyvm "${VM_NAME}" --memory ${MEMORY_SIZE} --cpus ${CPU_COUNT} --vram ${VRAM_SIZE} --clipboard bidirectional --nic1 nat --natpf1 "guestssh,tcp,,2222,,22" --natpf1 "guesthttp,tcp,,80,,80" --natpf1 "guesthttps,tcp,,443,,443" --boot1 dvd --boot2 none --boot3 none --boot4 none --nic2 hostonly --hostonlyadapter2 vboxnet0
+
+# Set up shared folder
+if [ ! -d "${SHARED_FOLDER}" ]; then
+    mkdir -p "${SHARED_FOLDER}"
+fi
+VBoxManage sharedfolder add "${VM_NAME}" --name "shared" --hostpath "${SHARED_FOLDER}" --automount
 
 # Create and attach virtual hard disk
 VBoxManage createhd --filename "${VDI_PATH}" --size ${VDI_SIZE} --format VDI
 VBoxManage storagectl "${VM_NAME}" --name "SATA Controller" --add sata --controller IntelAhci --portcount 1
 VBoxManage storageattach "${VM_NAME}" --storagectl "SATA Controller" --port 0 --device 0 --type hdd --medium "${VDI_PATH}"
 
-# Set up shared folder
-VBoxManage sharedfolder add "${VM_NAME}" --name "shared" --hostpath "${SHARED_FOLDER}" --automount
+# Create and attach cloud-init ISO
+hdiutil makehybrid -iso -joliet -default-volume-name cidata -o /Users/sel-mars/goinfre/VirtualBox/${VM_NAME}/ubuntu-autoinstall.iso ./confs/
 
-# Create and configure Host-Only Network
-# VBoxManage hostonlyif create
-# VBoxManage hostonlyif ipconfig vboxnet0 --ip 192.168.56.1 --netmask 255.255.255.0
-# VBoxManage modifyvm "${VM_NAME}" --nic1 hostonly --hostonlyadapter1 vboxnet0
-
-# Set up network port forwarding for SSH, HTTP, and HTTPS
-VBoxManage modifyvm "${VM_NAME}" --natpf1 "guest_ssh,tcp,,2222,,22"
-VBoxManage modifyvm "${VM_NAME}" --natpf1 "guest_http,tcp,,80,,80"
-VBoxManage modifyvm "${VM_NAME}" --natpf1 "guest_https,tcp,,443,,443"
-
-# # Listen for a username and password
-# # read -p "Enter a username: " USERNAME
-# read -s -p "Enter a password: " PASSWORD
-# HASHED_PASSWORD=$(echo -n "$PASSWORD" | openssl dgst -sha512)
-
-# # Copy cloud-init configuration file replacing "password" with the hashed password and
-# # copy it to a temporary directory along with meta-data from ./confs
-
-if [ -d /tmp/cloud-init ]; then
-    rm -rf /tmp/cloud-init
-fi
-mkdir /tmp/cloud-init
-# cp ./confs/user-data /tmp/cloud-init/user-data
-# cp ./confs/meta-data /tmp/cloud-init/meta-data
-# sed -i '' "s|passwordPlaceholder|$HASHED_PASSWORD|g" /tmp/cloud-init/user-data
-
-# !tmp
-cp ./confs/user-data /tmp/cloud-init/user-data
-cp ./confs/meta-data /tmp/cloud-init/meta-data
-hdiutil makehybrid -iso -joliet -default-volume-name cidata -o /Users/sel-mars/goinfre/VirtualBox/${VM_NAME}/ubuntu-autoinstall.iso /tmp/cloud-init
-# END !tmp
-
-# # Create FAT-32 file and convert it to vmdk
-# if [ -f /Users/sel-mars/goinfre/VirtualBox/${VM_NAME}/ubuntu-autoinstall.dmg ]; then
-#     hdiutil detach /Users/sel-mars/goinfre/VirtualBox/${VM_NAME}/ubuntu-autoinstall.dmg
-#     rm -rf /Users/sel-mars/goinfre/VirtualBox/${VM_NAME}/ubuntu-autoinstall.dmg
-# fi
-# hdiutil create -ov -size 100m -fs fat32 -volname cidata /Users/sel-mars/goinfre/VirtualBox/${VM_NAME}/ubuntu-autoinstall.dmg
-# DISK_PATH=$(hdiutil attach /Users/sel-mars/goinfre/VirtualBox/${VM_NAME}/ubuntu-autoinstall.dmg | grep FDisk_partition_scheme | awk '{print $1}')
-# diskutil unmountDisk "${DISK_PATH}"
-# sleep 2
-# VBoxManage createmedium disk --filename /Users/sel-mars/goinfre/VirtualBox/${VM_NAME}/ubuntu-autoinstall.vmdk --format VMDK --variant RawDisk --property RawDrive="${DISK_PATH}"
-# diskutil mountDisk "${DISK_PATH}"
-# sleep 2
-
-# cp /tmp/cloud-init/user-data /Volumes/cidata/user-data
-# cp /tmp/cloud-init/meta-data /Volumes/cidata/meta-data
-
-# Make a FAT-32 formatted disk image and mount it
-# hdiutil create -ov -size 100m -fs fat32 -volname cidata /Users/sel-mars/goinfre/VirtualBox/${VM_NAME}/ubuntu-autoinstall.dmg
-# hdiutil attach /Users/sel-mars/goinfre/VirtualBox/${VM_NAME}/ubuntu-autoinstall.dmg
-
-# Create raw disk image
-# VBoxManage internalcommands createrawvmdk -filename /Users/sel-mars/goinfre/VirtualBox/${VM_NAME}/ubuntu-autoinstall.vmdk -rawdisk /Users/sel-mars/goinfre/VirtualBox/${VM_NAME}/ubuntu-autoinstall.dmg
-
-# Attach the Ubuntu to device 0 and cloud-init ISO to device 1
+# Attach the Ubuntu as Primary Device 0 and cidata as Primary Device 1
 VBoxManage storagectl "${VM_NAME}" --name "IDE Controller" --add ide
 VBoxManage storageattach "${VM_NAME}" --storagectl "IDE Controller" --port 0 --device 0 --type dvddrive --medium "${ISO_PATH}"
 VBoxManage storageattach "${VM_NAME}" --storagectl "IDE Controller" --port 0 --device 1 --type dvddrive --medium /Users/sel-mars/goinfre/VirtualBox/${VM_NAME}/ubuntu-autoinstall.iso
 
-# Disable Floppy from booting and enable Hard Disk + CD/DVD
-VBoxManage modifyvm "${VM_NAME}" --boot1 disk --boot2 dvd --boot3 none --boot4 none
-
 # Start the VM
-VBoxManage startvm "${VM_NAME}" --type gui
+VBoxManage startvm "${VM_NAME}" --type headless
+
+# Wait for the VM to shutdown and finish installtion to remove the isos
+sleep 60
+while ! VBoxManage showvminfo "${VM_NAME}" --machinereadable | grep -q "VMState=\"running\""; do
+    echo "Waiting for VM to finish installation..."
+    sleep 120
+done
+
+# Remove isos and ide
+VBoxManage storageattach "${VM_NAME}" --storagectl "IDE Controller" --port 0 --device 0 --type dvddrive --medium none
+VBoxManage storageattach "${VM_NAME}" --storagectl "IDE Controller" --port 0 --device 1 --type dvddrive --medium none
+rm -f /Users/sel-mars/goinfre/VirtualBox/${VM_NAME}/ubuntu-autoinstall.iso
+VBoxManage storagectl "${VM_NAME}" --name "IDE Controller" --remove
+VBoxManage modifyvm "${VM_NAME}" --boot1 disk --boot2 none --boot3 none --boot4 none
+
+# Take Snapshot
+VBoxManage snapshot "${VM_NAME}" take "InstallComplete"
+
+Start the VM
+VBoxManage startvm "${VM_NAME}" --type headless
+
+# Wait for the VM to boot up
+while ! VBoxManage showvminfo "${VM_NAME}" --machinereadable | grep -q "VMState=\"running\""; do
+    echo "Waiting for VM to boot up..."
+    sleep 10
+done
+
+echo -e "\033[1;32mVM has been created successfully!\033[0m"
+echo -e "=> VM name: \033[1;97m${VM_NAME}\033[0m"
+echo -e "=> VM username: \033[1;97m${USERNAME}\033[0m"
+echo -e "=> VM password: \033[1;97m${PASSWORD}\033[0m"
+
+echo -e "\033[1;32mVM has been configured successfully!\033[0m"
