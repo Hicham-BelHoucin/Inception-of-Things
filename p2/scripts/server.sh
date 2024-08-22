@@ -23,3 +23,12 @@ sudo cp /var/lib/rancher/k3s/server/node-token /vagrant/shared
 sudo sed -i 's/^#\?PermitRootLogin.*/PermitRootLogin yes/' /etc/ssh/sshd_config
 sudo sed -i 's/^#\?PasswordAuthentication.*/PasswordAuthentication no/' /etc/ssh/sshd_config
 sudo systemctl restart sshd
+
+sudo kubectl apply -f /vagrant/shared/app2.yaml
+sudo kubectl apply -f /vagrant/shared/app1.yaml
+sudo kubectl apply -f /vagrant/shared/app3.yaml
+
+
+
+
+

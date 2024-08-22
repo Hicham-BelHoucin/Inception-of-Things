@@ -1,0 +1,6 @@
+/shared
+*/shared
+.vagrant/
+*.log
+*.log.*
+
