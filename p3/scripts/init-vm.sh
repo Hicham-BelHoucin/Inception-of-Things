@@ -27,7 +27,7 @@ if VBoxManage list vms | grep -q "\"${VM_NAME}\""; then
 fi
 
 # Setup VBox network if it doesn't exist
-if ! VBoxManage list hostonlyifs | grep -q "Name: vboxnet0"; then
+if VBoxManage list hostonlyifs | grep -q "vboxnet0"; then
     VBoxManage hostonlyif create
 fi
 VBoxManage hostonlyif ipconfig vboxnet0 --ip 192.168.56.1
@@ -60,7 +60,7 @@ VBoxManage startvm "${VM_NAME}" --type headless
 
 # Wait for the VM to shutdown and finish installtion to remove the isos
 sleep 60
-while ! VBoxManage showvminfo "${VM_NAME}" --machinereadable | grep -q "VMState=\"running\""; do
+while VBoxManage showvminfo "${VM_NAME}" --machinereadable | grep -q "VMState=\"running\""; do
     echo "Waiting for VM to finish installation..."
     sleep 120
 done
@@ -75,14 +75,7 @@ VBoxManage modifyvm "${VM_NAME}" --boot1 disk --boot2 none --boot3 none --boot4 
 # Take Snapshot
 VBoxManage snapshot "${VM_NAME}" take "InstallComplete"
 
-Start the VM
 VBoxManage startvm "${VM_NAME}" --type headless
-
-# Wait for the VM to boot up
-while ! VBoxManage showvminfo "${VM_NAME}" --machinereadable | grep -q "VMState=\"running\""; do
-    echo "Waiting for VM to boot up..."
-    sleep 10
-done
 
 echo -e "\033[1;32mVM has been created successfully!\033[0m"
 echo -e "=> VM name: \033[1;97m${VM_NAME}\033[0m"
