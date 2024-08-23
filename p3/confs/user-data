@@ -13,4 +13,34 @@ autoinstall:
     hostname: ubuntu
     username: ubuntu
     password: "$6$wdAcoXrU039hKYPd$508Qvbe7ObUnxoj15DRCkzC3qO7edjH0VV7BPNRDYK4QR8ofJaEEF2heacn0QgD.f8pO8SNp83XNdWG6tocBM1"
+  late-commands:
+    - |
+      cat <<EOF > /target/etc/cloud/cloud.cfg.d/99-disable-network-config.cfg
+      network: {config: disabled}
+      EOF
+    - |
+      cat <<EOF | sudo tee /target/etc/netplan/90-network.yaml
+      network:
+        version: 2
+        ethernets:
+          enp0s3:
+            dhcp4: true
+          enp0s8:
+            dhcp4: false
+            addresses:
+              - 192.168.56.100/24
+            gateway4: 192.168.56.255
+            nameservers:
+              addresses: [8.8.8.8, 8.8.4.4]
+      EOF
+    - curtin in-target --target=/target -- netplan apply
+    - curtin in-target --target=/target -- apt update && apt install -y git ca-certificates curl virtualbox
+    - curtin in-target --target=/target -- install -m 0755 -d /etc/apt/keyrings
+    - curtin in-target --target=/target -- curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+    - curtin in-target --target=/target -- chmod a+r /etc/apt/keyrings/docker.asc
+    - curtin in-target --target=/target -- echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
+    - curtin in-target --target=/target -- apt update && apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+    - curtin in-target --target=/target -- wget -O- https://apt.releases.hashicorp.com/gpg | gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
+    - curtin in-target --target=/target -- echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | tee /etc/apt/sources.list.d/hashicorp.list
+    - curtin in-target --target=/target -- apt update && apt install vagrant
   shutdown: poweroff

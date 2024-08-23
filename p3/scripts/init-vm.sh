@@ -4,7 +4,6 @@
 UBUNTU_VERSION="20.04.6"
 ISO_PATH="/Users/sel-mars/goinfre/ubuntu-${UBUNTU_VERSION}-live-server-amd64.iso"
 VM_NAME="Inception-Of-Things"
-SHARED_FOLDER="/Users/sel-mars/goinfre/VirtualBox/${VM_NAME}/shared"
 VDI_PATH="/Users/sel-mars/goinfre/VirtualBox/${VM_NAME}/${VM_NAME}.vdi"
 VDI_SIZE=10240
 MEMORY_SIZE=4096
@@ -26,21 +25,15 @@ if VBoxManage list vms | grep -q "\"${VM_NAME}\""; then
     exit 1
 fi
 
-# Setup VBox network if it doesn't exist
-if VBoxManage list hostonlyifs | grep -q "vboxnet0"; then
+# Configure hostonly network 192.168.56.1 if it doesn't exist
+if ! VBoxManage list hostonlyifs | grep -q "vboxnet0"; then
     VBoxManage hostonlyif create
 fi
-VBoxManage hostonlyif ipconfig vboxnet0 --ip 192.168.56.1
+VBoxManage hostonlyif ipconfig vboxnet0 --ip 192.168.56.1 --netmask 255.255.255.0
 
 # Create VM and configure settings
 VBoxManage createvm --name "${VM_NAME}" --ostype "Ubuntu_64" --register
-VBoxManage modifyvm "${VM_NAME}" --memory ${MEMORY_SIZE} --cpus ${CPU_COUNT} --vram ${VRAM_SIZE} --clipboard bidirectional --nic1 nat --natpf1 "guestssh,tcp,,2222,,22" --natpf1 "guesthttp,tcp,,80,,80" --natpf1 "guesthttps,tcp,,443,,443" --boot1 dvd --boot2 none --boot3 none --boot4 none --nic2 hostonly --hostonlyadapter2 vboxnet0
-
-# Set up shared folder
-if [ ! -d "${SHARED_FOLDER}" ]; then
-    mkdir -p "${SHARED_FOLDER}"
-fi
-VBoxManage sharedfolder add "${VM_NAME}" --name "shared" --hostpath "${SHARED_FOLDER}" --automount
+VBoxManage modifyvm "${VM_NAME}" --memory ${MEMORY_SIZE} --cpus ${CPU_COUNT} --vram ${VRAM_SIZE} --boot1 dvd --boot2 none --boot3 none --boot4 none --nic1 nat --natpf1 "http,tcp,,80,,80" --natpf1 "https,tcp,,443,,443" --nic2 hostonly --hostonlyadapter2 vboxnet0 --clipboard bidirectional
 
 # Create and attach virtual hard disk
 VBoxManage createhd --filename "${VDI_PATH}" --size ${VDI_SIZE} --format VDI
@@ -59,11 +52,17 @@ VBoxManage storageattach "${VM_NAME}" --storagectl "IDE Controller" --port 0 --d
 VBoxManage startvm "${VM_NAME}" --type headless
 
 # Wait for the VM to shutdown and finish installtion to remove the isos
-sleep 60
+sleep 5
 while VBoxManage showvminfo "${VM_NAME}" --machinereadable | grep -q "VMState=\"running\""; do
-    echo "Waiting for VM to finish installation..."
-    sleep 120
+    echo -n "$(date | awk '{print $4}') - Waiting for VM installtion to finish"
+    for _ in {1..10}; do
+        echo -n "."
+        sleep 3
+    done
+    echo -ne "\r\033[K"
 done
+
+echo "VM has been shutdown"
 
 # Remove isos and ide
 VBoxManage storageattach "${VM_NAME}" --storagectl "IDE Controller" --port 0 --device 0 --type dvddrive --medium none
