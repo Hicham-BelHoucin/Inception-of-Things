@@ -25,11 +25,11 @@ if VBoxManage list vms | grep -q "\"${VM_NAME}\""; then
     exit 1
 fi
 
-# Configure hostonly network 192.168.56.1 if it doesn't exist
-if ! VBoxManage list hostonlyifs | grep -q "vboxnet0"; then
-    VBoxManage hostonlyif create
+# Remove Hostonly config if it already exists
+if VBoxManage list hostonlyifs | grep -q "vboxnet0"; then
+    VBoxManage hostonlyif remove vboxnet0 && VBoxManage hostonlyif create
 fi
-VBoxManage hostonlyif ipconfig vboxnet0 --ip 192.168.56.1 --netmask 255.255.255.0
+VBoxManage hostonlyif ipconfig vboxnet0 --ip 192.168.55.1 --netmask 255.255.255.0
 
 # Create VM and configure settings
 VBoxManage createvm --name "${VM_NAME}" --ostype "Ubuntu_64" --register
