@@ -33,7 +33,7 @@ VBoxManage dhcpserver remove --interface vboxnet0
 
 # Create VM and configure settings
 VBoxManage createvm --name "${VM_NAME}" --ostype "Ubuntu_64" --register
-VBoxManage modifyvm "${VM_NAME}" --memory ${MEMORY_SIZE} --cpus ${CPU_COUNT} --vram ${VRAM_SIZE} --boot1 dvd --boot2 none --boot3 none --boot4 none --nic1 nat --natpf1 "http,tcp,,80,,80" --natpf1 "https,tcp,,443,,443" --nic2 hostonly --hostonlyadapter2 vboxnet0 --clipboard bidirectional
+VBoxManage modifyvm "${VM_NAME}" --memory ${MEMORY_SIZE} --cpus ${CPU_COUNT} --vram ${VRAM_SIZE} --nested-hw-virt on --boot1 dvd --boot2 none --boot3 none --boot4 none --nic1 nat --natpf1 "http,tcp,,80,,80" --natpf1 "https,tcp,,443,,443" --nic2 hostonly --hostonlyadapter2 vboxnet0 --clipboard bidirectional --graphicscontroller vmsvga
 
 # Create and attach virtual hard disk
 VBoxManage createhd --filename "${VDI_PATH}" --size ${VDI_SIZE} --format VDI
