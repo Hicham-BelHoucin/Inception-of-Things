@@ -15,5 +15,5 @@ VBoxManage unregistervm "${VM_NAME}" --delete
 # Remove the cloud-init ISO
 rm -f "${CI_PATH}"
 
-# Remove ssh keys for ip 192.168.55.100 from known_hosts
-ssh-keygen -R 192.168.55.100
+# Remove ssh keys for ip 192.168.57.100 from known_hosts
+ssh-keygen -R 192.168.57.100
