@@ -72,7 +72,7 @@ VBoxManage storagectl "${VM_NAME}" --name "IDE Controller" --remove
 VBoxManage modifyvm "${VM_NAME}" --boot1 disk --boot2 none --boot3 none --boot4 none
 
 # Take Snapshot
-VBoxManage snapshot "${VM_NAME}" take "InstallComplete"
+# VBoxManage snapshot "${VM_NAME}" take "InstallComplete"
 
 VBoxManage startvm "${VM_NAME}" --type headless
 
