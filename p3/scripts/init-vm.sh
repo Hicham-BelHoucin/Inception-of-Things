@@ -51,7 +51,8 @@ VBoxManage storageattach "${VM_NAME}" --storagectl "IDE Controller" --port 0 --d
 # Start the VM
 VBoxManage startvm "${VM_NAME}" --type headless
 
-# Wait for the VM to shutdown and finish installtion to remove the isos
+# Wait for the VM to shutdown and finish installation
+echo "$(date | awk '{print $4}') - Starting VM installation"
 sleep 5
 while VBoxManage showvminfo "${VM_NAME}" --machinereadable | grep -q "VMState=\"running\""; do
     echo -n "$(date | awk '{print $4}') - Waiting for VM installtion to finish"
@@ -61,8 +62,7 @@ while VBoxManage showvminfo "${VM_NAME}" --machinereadable | grep -q "VMState=\"
     done
     echo -ne "\r\033[K"
 done
-
-echo "VM has been shutdown"
+echo "$(date | awk '{print $4}') - VM installation finished"
 
 # Remove isos and ide
 VBoxManage storageattach "${VM_NAME}" --storagectl "IDE Controller" --port 0 --device 0 --type dvddrive --medium none
