@@ -1,8 +1,8 @@
 #cloud-config
 runcmd:
-  - [eval, 'echo $(cat /proc/cmdline) "autoinstall" > /root/cmdline']
-  - [eval, "mount -n --bind -o ro /root/cmdline /proc/cmdline"]
-  - [eval, "snap restart subiquity.subiquity-service"]
+  - echo $(cat /proc/cmdline) "autoinstall" > /root/cmdline
+  - mount -n --bind -o ro /root/cmdline /proc/cmdline
+  - snap restart subiquity.subiquity-server subiquity.subiquity-service
 
 autoinstall:
   version: 1
@@ -19,8 +19,8 @@ autoinstall:
     - ca-certificates
     - curl
     - gnupg
-    - git
     - virtualbox
+    - git
     - docker-ce
     - docker-ce-cli
     - containerd.io
@@ -32,6 +32,7 @@ autoinstall:
     sources:
       docker.list:
         source: "deb [arch=amd64] https://download.docker.com/linux/ubuntu $RELEASE stable"
+        # keyserver: https://download.docker.com/linux/ubuntu/gpg
         key: |
           -----BEGIN PGP PUBLIC KEY BLOCK-----
 
@@ -97,6 +98,7 @@ autoinstall:
           -----END PGP PUBLIC KEY BLOCK-----
       hashicorp.list:
         source: "deb [arch=amd64] https://apt.releases.hashicorp.com $RELEASE main"
+        # keyserver: https://apt.releases.hashicorp.com/gpg
         key: |
           -----BEGIN PGP PUBLIC KEY BLOCK-----
 
@@ -164,6 +166,7 @@ autoinstall:
           -----END PGP PUBLIC KEY BLOCK-----
       kubernetes.list:
         source: "deb [arch=amd64] https://pkgs.k8s.io/core:/stable:/v1.31/deb/ /"
+        # keyserver: https://pkgs.k8s.io/core:/stable:/v1.31/deb/Release.key
         key: |
           -----BEGIN PGP PUBLIC KEY BLOCK-----
           Version: GnuPG v2.0.15 (GNU/Linux)
@@ -206,14 +209,11 @@ autoinstall:
         version: 2
         ethernets:
           enp0s3:
-            dhcp4: true
-          enp0s8:
             dhcp4: false
             addresses:
               - 192.168.57.100/24
-            gateway4: 192.168.57.255
-            nameservers:
-              addresses: [8.8.8.8, 8.8.4.4]
+          enp0s8:
+            dhcp4: true
       EOF
     - curtin in-target --target=/target -- netplan apply
   shutdown: poweroff
