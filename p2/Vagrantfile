@@ -1,9 +1,14 @@
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
 
+require 'fileutils'
+
 Vagrant.configure("2") do |config|
   config.vm.box = "ubuntu/focal64"
   config.vm.synced_folder "./shared", "/vagrant", create: true
+
+  FileUtils.mkdir_p("shared")
+  FileUtils.cp("confs/app.yaml", "shared/")
 
   config.vm.define "sel-marsS" do |node|
     node.vm.hostname = "sel-marsS"
@@ -11,9 +16,8 @@ Vagrant.configure("2") do |config|
     node.vm.provider "virtualbox" do |vb|
       vb.name = "sel-marsS"
       vb.memory = "1024"
-      vb.cpus = "1"
+      vb.cpus = 1
     end
-    system("cp -r confs/ shared/")
     node.vm.provision "shell", path: "scripts/sel-marsS.sh"
   end
 end

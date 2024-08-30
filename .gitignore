@@ -1,2 +1,5 @@
 */.vagrant
 */shared
+
+# macos
+.DS_Store
