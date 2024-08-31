@@ -216,4 +216,9 @@ autoinstall:
             dhcp4: true
       EOF
     - curtin in-target --target=/target -- netplan apply
+    - curtin in-target --target=/target -- curl -sSL https://github.com/k3d-io/k3d/releases/download/v5.7.3/k3d-linux-amd64 -o /usr/local/bin/k3d
+    - curtin in-target --target=/target -- chmod +x /usr/local/bin/k3d
+    - curtin in-target --target=/target -- curl -sSL -o argocd-linux-amd64 https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
+    - curtin in-target --target=/target -- install -m 555 argocd-linux-amd64 /usr/local/bin/argocd
+    - curtin in-target --target=/target -- rm argocd-linux-amd64
   shutdown: poweroff
