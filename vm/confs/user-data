@@ -1,0 +1,34 @@
+#cloud-config
+runcmd:
+  - echo $(cat /proc/cmdline) "autoinstall" > /root/cmdline
+  - mount -n --bind -o ro /root/cmdline /proc/cmdline
+  - snap restart subiquity.subiquity-server subiquity.subiquity-service
+
+autoinstall:
+  version: 1
+  ssh:
+    install-server: true
+    allow-pw: true
+  identity:
+    hostname: ubuntu
+    username: ubuntu
+    password: "$6$wdAcoXrU039hKYPd$508Qvbe7ObUnxoj15DRCkzC3qO7edjH0VV7BPNRDYK4QR8ofJaEEF2heacn0QgD.f8pO8SNp83XNdWG6tocBM1"
+  late-commands:
+    - |
+      cat <<EOF > /target/etc/cloud/cloud.cfg.d/99-disable-network-config.cfg
+      network: {config: disabled}
+      EOF
+    - |
+      cat <<EOF | sudo tee /target/etc/netplan/90-network.yaml
+      network:
+        version: 2
+        ethernets:
+          enp0s3:
+            dhcp4: false
+            addresses:
+              - 192.168.57.100/24
+          enp0s8:
+            dhcp4: true
+      EOF
+    - curtin in-target --target=/target -- netplan apply
+  shutdown: poweroff

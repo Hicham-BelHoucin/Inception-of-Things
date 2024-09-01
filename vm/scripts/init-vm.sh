@@ -77,7 +77,7 @@ done
 END_TIME=$(date +%s)
 SECONDS=$((END_TIME - START_TIME))
 echo "$(date | awk '{print $4}') - VM installation finished"
-echo "==> Total time taken: $((SECONDS / 60)):$((SECONDS % 60))"
+echo -e "==> Total time taken: \033[1;97m$((SECONDS / 60)):$((SECONDS % 60))\033[0m"
 
 sleep 5
 
@@ -94,6 +94,7 @@ VBoxManage modifyvm "${VM_NAME}" --boot1 disk --boot2 none --boot3 none --boot4 
 VBoxManage startvm "${VM_NAME}" --type headless
 
 echo -e "\033[1;32mVM has been created successfully!\033[0m"
+echo -e "=> VM IP: \033[1;97m192.168.57.100\033[0m"
 echo -e "=> VM name: \033[1;97m${VM_NAME}\033[0m"
 echo -e "=> VM username: \033[1;97m${USERNAME}\033[0m"
 echo -e "=> VM password: \033[1;97m${PASSWORD}\033[0m"
