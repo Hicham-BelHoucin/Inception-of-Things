@@ -58,7 +58,7 @@ VBoxManage storageattach "${VM_NAME}" --storagectl "IDE Controller" --port 0 --d
 VBoxManage storageattach "${VM_NAME}" --storagectl "IDE Controller" --port 0 --device 1 --type dvddrive --medium "${VM_PATH}/ubuntu-autoinstall.iso"
 
 # Start the VM
-VBoxManage startvm "${VM_NAME}" --type gui
+VBoxManage startvm "${VM_NAME}" --type headless
 
 # Wait for the VM to shutdown and finish installation
 START_TIME=$(date +%s)

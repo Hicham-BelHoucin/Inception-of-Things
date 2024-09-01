@@ -7,7 +7,6 @@ apt-get update && apt-get install -y \
     curl \
     ca-certificates \
     gnupg \
-    git \
     virtualbox
 
 # Add Docker GPG key and repository
@@ -59,7 +58,7 @@ kubectl -n argocd apply -f /home/ubuntu/p3/confs/argocd.yaml
 # Wait for Argo CD to be ready
 echo "=> Waiting for ArgoCD to be ready..."
 sleep 5
-kubectl -n argocd wait --for=condition=ready pod -l app.kubernetes.io/name=argocd-server --timeout=300s
+kubectl -n argocd wait --for=condition=ready pod --all --timeout=300s
 echo "=> ArgoCD is ready!"
 
 # Configure Argo CD
@@ -69,15 +68,15 @@ argocd login localhost --insecure --grpc-web --username admin --password "$PASSW
 
 # Deploy the application
 kubectl create namespace dev
-argocd app create wil-playground --repo https://github.com/soofiane262/sel-mars.git --path wil-playground --dest-namespace dev --dest-server https://kubernetes.default.svc --sync-policy auto --revision main
+argocd app create wil-playground --repo https://github.com/soofiane262/sel-mars.git --path wil-playground --dest-namespace dev --dest-server https://kubernetes.default.svc --sync-policy auto --revision HEAD
 
 # Wait for the application service to be ready
 sleep 5
-kubectl -n dev wait --for=condition=ready pod -l app=wil-playground --timeout=60s
+kubectl -n dev wait --for=condition=ready pod --all --timeout=60s
 echo "=> Wil-playground is ready!"
 
 # Port-forward the application
 kubectl -n dev port-forward svc/wil-playground 8888:8888 &
 
 # Display the ArgoCD admin password
-echo -e "=> ArgoCD password: \033[1;31m$PASSWORD\033[0m"
+echo -e "=> ArgoCD password: \033[0;31m$PASSWORD\033[0m"
