@@ -2,15 +2,16 @@
 # vi: set ft=ruby :
 
 servers = [
-  { :name => "sel-marsS", :primary => true, :ip => "192.168.56.110", :memory => "1024", :cpus => 1 },
-  { :name => "sel-marsSW", :primary => false, :ip => "192.168.56.111", :memory => "1024", :cpus => 1 }
+  { :name => "sel-marsS", :primary => true, :memory => "1024", :cpus => 1, :ip => "192.168.56.110", :forwarded_port => 6443 },
+  { :name => "sel-marsSW", :primary => false, :memory => "1024", :cpus => 1, :ip => "192.168.56.111" },
 ]
 
 Vagrant.configure("2") do |config|
-  config.vm.box = "ubuntu/focal64"
+  config.vm.box = "ubuntu/jammy64"
   config.vm.synced_folder "./shared", "/vagrant", create: true
 
   servers.each do |conf|
+    config.vm.boot_timeout = 600
     config.vm.define conf[:name], primary: conf[:primary] do |node|
       node.vm.hostname = conf[:name]
       node.vm.network "private_network", ip: conf[:ip]
