@@ -6,7 +6,7 @@ if [ "$#" -ne 1 ]; then
 fi
 
 # Variables
-UBUNTU_VERSION="20.04.6"
+UBUNTU_VERSION="24.04.1"
 ISO_PATH="/Users/sel-mars/Downloads/ubuntu-${UBUNTU_VERSION}-live-server-amd64.iso"
 VM_NAME="Inception-Of-Things"
 VM_PATH="$1/${VM_NAME}"

@@ -3,13 +3,13 @@
 
 require 'fileutils'
 
+FileUtils.mkdir_p("shared")
+FileUtils.cp("confs/app.yaml", "shared/")
+
 Vagrant.configure("2") do |config|
-  config.vm.box = "ubuntu/focal64"
-  config.vm.synced_folder "./shared", "/vagrant", create: true
-
-  FileUtils.mkdir_p("shared")
-  FileUtils.cp("confs/app.yaml", "shared/")
-
+  config.vm.boot_timeout = 600
+  config.vm.box = "bento/ubuntu-24.04"
+  config.vm.synced_folder "./shared", "/vagrant"
   config.vm.define "sel-marsS" do |node|
     node.vm.hostname = "sel-marsS"
     node.vm.network "private_network", ip: "192.168.56.110"

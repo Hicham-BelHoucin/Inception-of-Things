@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Install k3s with the specified IP address
-curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="server --write-kubeconfig-mode 644 --node-ip=192.168.56.110" sh -
+curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="server --write-kubeconfig-mode 644 --node-ip=192.168.56.110 --flannel-iface=eth1" sh -
 
 # Wait for k3s to be ready
 while [ ! -d /var/lib/rancher/k3s/server/manifests/ ]; do
